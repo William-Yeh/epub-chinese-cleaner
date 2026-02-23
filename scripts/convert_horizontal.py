@@ -255,13 +255,64 @@ def _make_test_epub(path, writing_mode="vertical-rl", page_direction="rtl"):
         )
 
 
+def _run_self_test():
+    """Create a test epub, convert it, verify results."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        test_in = os.path.join(tmpdir, "test_vertical.epub")
+        test_out = os.path.join(tmpdir, "test_horizontal.epub")
+
+        _make_test_epub(test_in, writing_mode="vertical-rl", page_direction="rtl")
+
+        # Should need conversion
+        info = detect_vertical(test_in)
+        assert info["needs_conversion"], "Detection should find vertical layout"
+        assert info["has_vertical_css"], "Should detect vertical CSS"
+        assert info["has_rtl_spine"], "Should detect RTL spine"
+
+        # Convert
+        convert_direct(test_in, test_out)
+
+        # Verify output is horizontal
+        info2 = detect_vertical(test_out)
+        assert not info2["needs_conversion"], "Output should be horizontal"
+        assert not info2["has_vertical_css"], "Output should have no vertical CSS"
+        assert not info2["has_rtl_spine"], "Output should have no RTL spine"
+
+        # Verify punctuation replacement
+        with zipfile.ZipFile(test_out, "r") as zf:
+            for name in zf.namelist():
+                content = zf.read(name).decode("utf-8", errors="replace")
+                if name.endswith(".xhtml"):
+                    assert "︒" not in content, f"Vertical punct still in {name}"
+                    assert "。" in content, f"Horizontal punct missing in {name}"
+                if name.endswith(".css"):
+                    assert "vertical-rl" not in content, f"vertical-rl still in {name}"
+
+        # Test already-horizontal epub
+        test_h = os.path.join(tmpdir, "test_already_h.epub")
+        _make_test_epub(test_h, writing_mode=None, page_direction=None)
+        info3 = detect_vertical(test_h)
+        assert not info3["needs_conversion"], "Horizontal epub should not need conversion"
+
+    print("All self-tests passed.")
+    return 0
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Convert Chinese epub from vertical (直排) to horizontal (橫排) layout."
     )
-    parser.add_argument("input", help="Input epub file path")
+    parser.add_argument("input", nargs="?", help="Input epub file path")
     parser.add_argument("-o", "--output", help="Output epub file path (default: <input>_horizontal.epub)")
+    parser.add_argument("--self-test", action="store_true", help="Run self-test with a generated test epub")
     args = parser.parse_args()
+
+    if args.self_test:
+        return _run_self_test()
+
+    if not args.input:
+        parser.print_help()
+        return 1
 
     if not os.path.isfile(args.input):
         print(f"File not found: {args.input}", file=sys.stderr)

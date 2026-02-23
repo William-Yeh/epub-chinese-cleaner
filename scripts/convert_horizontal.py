@@ -8,6 +8,15 @@ import tempfile
 import xml.etree.ElementTree as ET
 import zipfile
 
+V2H_PUNCTUATION = {
+    "︒": "。", "︑": "、", "︐": "，", "︔": "；", "︓": "：",
+    "︕": "！", "︖": "？", "﹁": "「", "﹂": "」", "﹃": "『",
+    "﹄": "』", "︽": "《", "︾": "》", "︵": "（", "︶": "）",
+    "︷": "｛", "︸": "｝", "﹇": "［", "﹈": "］",
+}
+
+_v2h_re = re.compile("|".join(re.escape(k) for k in V2H_PUNCTUATION))
+
 
 def find_opf_path(zf):
     """Find content.opf path from META-INF/container.xml."""
@@ -39,6 +48,77 @@ def detect_vertical(epub_path):
 
     result["needs_conversion"] = result["has_vertical_css"] or result["has_rtl_spine"]
     return result
+
+
+_WRITING_MODE_RE = re.compile(
+    r"(-(?:epub|webkit)-)?writing-mode\s*:\s*vertical-(rl|lr)",
+)
+
+
+def rewrite_css_horizontal(content):
+    """Replace vertical writing-mode with horizontal-tb in CSS/XHTML content."""
+    return _WRITING_MODE_RE.sub(
+        lambda m: f"{m.group(1) or ''}writing-mode: horizontal-tb", content
+    )
+
+
+def fix_spine_direction(opf_content):
+    """Remove page-progression-direction='rtl' from <spine>."""
+    return re.sub(
+        r'\s+page-progression-direction\s*=\s*"rtl"',
+        "",
+        opf_content,
+    )
+
+
+def replace_punctuation(content):
+    """Replace vertical-form Unicode punctuation with horizontal equivalents."""
+    return _v2h_re.sub(lambda m: V2H_PUNCTUATION[m.group()], content)
+
+
+def convert_direct(epub_path, output_path):
+    """Convert epub to horizontal layout via direct file manipulation."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Extract
+        with zipfile.ZipFile(epub_path, "r") as zf:
+            zf.extractall(tmpdir)
+            opf_rel_path = find_opf_path(zf)
+            names = zf.namelist()
+
+        opf_full = os.path.join(tmpdir, opf_rel_path)
+
+        # Fix OPF spine
+        with open(opf_full, "r", encoding="utf-8") as f:
+            opf_content = f.read()
+        opf_content = fix_spine_direction(opf_content)
+        with open(opf_full, "w", encoding="utf-8") as f:
+            f.write(opf_content)
+
+        # Fix CSS/XHTML files
+        for name in names:
+            if not name.endswith((".css", ".xhtml", ".html", ".htm")):
+                continue
+            full = os.path.join(tmpdir, name)
+            with open(full, "r", encoding="utf-8") as f:
+                content = f.read()
+            original = content
+            content = rewrite_css_horizontal(content)
+            content = replace_punctuation(content)
+            if content != original:
+                with open(full, "w", encoding="utf-8") as f:
+                    f.write(content)
+
+        # Re-zip: mimetype must be first, uncompressed
+        with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as zout:
+            mimetype_path = os.path.join(tmpdir, "mimetype")
+            if os.path.exists(mimetype_path):
+                zout.write(mimetype_path, "mimetype", compress_type=zipfile.ZIP_STORED)
+            for name in names:
+                if name == "mimetype":
+                    continue
+                zout.write(os.path.join(tmpdir, name), name)
+
+    print(f"Converted (direct): {output_path}")
 
 
 def _make_test_epub(path, writing_mode="vertical-rl", page_direction="rtl"):
@@ -88,7 +168,7 @@ def _make_test_epub(path, writing_mode="vertical-rl", page_direction="rtl"):
             '<?xml version="1.0" encoding="utf-8"?>\n'
             '<html xmlns="http://www.w3.org/1999/xhtml">\n'
             '<head><link rel="stylesheet" href="style.css"/></head>\n'
-            "<body><p>測試內容</p></body>\n"
+            "<body><p>測試內容︒︑︐</p></body>\n"
             "</html>",
         )
 

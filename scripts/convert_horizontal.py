@@ -3,6 +3,8 @@
 
 import os
 import re
+import shutil
+import subprocess
 import sys
 import tempfile
 import xml.etree.ElementTree as ET
@@ -119,6 +121,85 @@ def convert_direct(epub_path, output_path):
                 zout.write(os.path.join(tmpdir, name), name)
 
     print(f"Converted (direct): {output_path}")
+
+
+_CALIBRE_PATHS = [
+    "calibre-debug",  # in PATH
+    "/Applications/calibre.app/Contents/MacOS/calibre-debug",  # macOS
+]
+
+
+def find_calibre_debug():
+    """Find calibre-debug executable. Returns path or None."""
+    for path in _CALIBRE_PATHS:
+        if shutil.which(path):
+            return path
+        if os.path.isfile(path) and os.access(path, os.X_OK):
+            return path
+    return None
+
+
+def convert_via_calibre(epub_path, output_path, calibre_debug):
+    """Convert epub using Calibre's TradSimpChinese plugin CLI."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        result = subprocess.run(
+            [
+                calibre_debug, "-e",
+                "from calibre_plugins.chinese_text.main import main; import sys; sys.exit(main(sys.argv[1:], ('cli','0.0')))",
+                "--",
+                "-td", "h",
+                "-up",
+                "-d", "t2t",
+                "-od", tmpdir,
+                "-f",
+                epub_path,
+            ],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            print(f"Calibre plugin failed: {result.stderr}", file=sys.stderr)
+            return False
+
+        # Find the output file in tmpdir
+        outputs = [f for f in os.listdir(tmpdir) if f.endswith(".epub")]
+        if not outputs:
+            print("Calibre plugin produced no output", file=sys.stderr)
+            return False
+
+        generated = os.path.join(tmpdir, outputs[0])
+
+        # Post-process: fix spine direction (plugin may not handle this)
+        _fix_spine_in_epub(generated, output_path)
+
+    print(f"Converted (Calibre): {output_path}")
+    return True
+
+
+def _fix_spine_in_epub(epub_path, output_path):
+    """Read epub, fix spine direction, write to output_path."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        with zipfile.ZipFile(epub_path, "r") as zf:
+            zf.extractall(tmpdir)
+            opf_rel = find_opf_path(zf)
+            names = zf.namelist()
+
+        opf_full = os.path.join(tmpdir, opf_rel)
+        with open(opf_full, "r", encoding="utf-8") as f:
+            content = f.read()
+        fixed = fix_spine_direction(content)
+        if fixed != content:
+            with open(opf_full, "w", encoding="utf-8") as f:
+                f.write(fixed)
+
+        with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as zout:
+            mimetype_path = os.path.join(tmpdir, "mimetype")
+            if os.path.exists(mimetype_path):
+                zout.write(mimetype_path, "mimetype", compress_type=zipfile.ZIP_STORED)
+            for name in names:
+                if name == "mimetype":
+                    continue
+                zout.write(os.path.join(tmpdir, name), name)
 
 
 def _make_test_epub(path, writing_mode="vertical-rl", page_direction="rtl"):

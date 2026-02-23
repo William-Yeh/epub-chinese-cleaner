@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Convert Chinese epub from vertical (直排) to horizontal (橫排) layout."""
 
+import argparse
 import os
 import re
 import shutil
@@ -255,8 +256,42 @@ def _make_test_epub(path, writing_mode="vertical-rl", page_direction="rtl"):
 
 
 def main():
-    print("TODO: implement")
-    return 1
+    parser = argparse.ArgumentParser(
+        description="Convert Chinese epub from vertical (直排) to horizontal (橫排) layout."
+    )
+    parser.add_argument("input", help="Input epub file path")
+    parser.add_argument("-o", "--output", help="Output epub file path (default: <input>_horizontal.epub)")
+    args = parser.parse_args()
+
+    if not os.path.isfile(args.input):
+        print(f"File not found: {args.input}", file=sys.stderr)
+        return 1
+
+    # Detection
+    info = detect_vertical(args.input)
+    if not info["needs_conversion"]:
+        print("Already horizontal — no conversion needed.")
+        return 0
+
+    print(f"Detected: vertical_css={info['has_vertical_css']}, rtl_spine={info['has_rtl_spine']}")
+
+    # Output path
+    output = args.output
+    if not output:
+        base, ext = os.path.splitext(args.input)
+        output = f"{base}_horizontal{ext}"
+
+    # Try Calibre first
+    calibre = find_calibre_debug()
+    if calibre:
+        print(f"Using Calibre: {calibre}")
+        if convert_via_calibre(args.input, output, calibre):
+            return 0
+        print("Calibre failed, falling back to direct manipulation.", file=sys.stderr)
+
+    # Fallback: direct manipulation
+    convert_direct(args.input, output)
+    return 0
 
 
 if __name__ == "__main__":

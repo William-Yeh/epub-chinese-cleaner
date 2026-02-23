@@ -7,16 +7,18 @@ on:
     branches: [main]
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
-      - run: uv run skill-lint check .
-
   validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: epub-chinese-cleaner
       - uses: astral-sh/setup-uv@v6
-      - run: uvx --from skills-ref agentskills validate .
+      - run: uvx --from skills-ref agentskills validate epub-chinese-cleaner
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv run --with pytest pytest tests/ -v

@@ -39,13 +39,13 @@ def detect_vertical(epub_path):
     with zipfile.ZipFile(epub_path, "r") as zf:
         opf_path = find_opf_path(zf)
         opf_content = zf.read(opf_path).decode("utf-8")
-        if re.search(r'page-progression-direction\s*=\s*"rtl"', opf_content):
+        if re.search(r"""page-progression-direction\s*=\s*["']rtl["']""", opf_content):
             result["has_rtl_spine"] = True
 
         for name in zf.namelist():
             if name.endswith((".css", ".xhtml", ".html", ".htm", ".xml")):
                 content = zf.read(name).decode("utf-8", errors="replace")
-                if re.search(r"writing-mode\s*:\s*vertical-(rl|lr)", content):
+                if re.search(r"(-(?:epub|webkit)-)?writing-mode\s*:\s*vertical-(rl|lr)", content):
                     result["has_vertical_css"] = True
                     break
 
@@ -68,7 +68,7 @@ def rewrite_css_horizontal(content):
 def fix_spine_direction(opf_content):
     """Remove page-progression-direction='rtl' from <spine>."""
     return re.sub(
-        r'\s+page-progression-direction\s*=\s*"rtl"',
+        r"""\s+page-progression-direction\s*=\s*["']rtl["']""",
         "",
         opf_content,
     )

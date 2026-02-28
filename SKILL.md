@@ -5,7 +5,7 @@ license: MIT
 compatibility: Requires Python 3.8+. Optionally uses Calibre with TradSimpChinese plugin for best results.
 metadata:
   author: William Yeh <william.pjyeh@gmail.com>
-  version: "1.4"
+  version: "1.5"
 ---
 
 # epub-chinese-cleaner
@@ -32,7 +32,7 @@ The agent runs:
 
     python3 scripts/convert_horizontal.py <input.epub>
 
-Output is `<input>_horizontal.epub`. The script auto-detects whether conversion is needed and picks the best method (Calibre if available, direct manipulation otherwise).
+Output is `<input>_horizontal.epub`. The script auto-detects whether conversion is needed and uses direct manipulation by default, falling back to Calibre if direct manipulation fails.
 
 ## Punctuation mapping
 

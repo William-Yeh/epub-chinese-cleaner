@@ -4,7 +4,7 @@
 
 **Goal:** Agent Skill that converts Chinese-language epubs from vertical (直排/RTL) to horizontal (橫排/LTR) layout with punctuation normalization.
 
-**Architecture:** Python script inside an agentskills.io skill directory. Tries Calibre CLI (TradSimpChinese plugin) first, falls back to direct epub manipulation (stdlib only). Epub is a zip of XHTML/CSS/XML — both paths produce a new output file.
+**Architecture:** Python script inside an agentskills.io skill directory. Uses direct epub manipulation (stdlib only) first, falls back to Calibre CLI (TradSimpChinese plugin) if direct manipulation fails. Epub is a zip of XHTML/CSS/XML — both paths produce a new output file.
 
 **Tech Stack:** Python 3 stdlib (`zipfile`, `xml.etree.ElementTree`, `re`, `tempfile`, `shutil`, `subprocess`). No external deps for fallback path.
 
@@ -465,17 +465,21 @@ def main():
         base, ext = os.path.splitext(args.input)
         output = f"{base}_horizontal{ext}"
 
-    # Try Calibre first
+    # Direct manipulation first
+    try:
+        convert_direct(args.input, output)
+        return 0
+    except Exception as e:
+        print(f"Direct manipulation failed: {e}, falling back to Calibre.", file=sys.stderr)
+
+    # Fallback: Calibre
     calibre = find_calibre_debug()
     if calibre:
         print(f"Using Calibre: {calibre}")
         if convert_via_calibre(args.input, output, calibre):
             return 0
-        print("Calibre failed, falling back to direct manipulation.", file=sys.stderr)
-
-    # Fallback: direct manipulation
-    convert_direct(args.input, output)
-    return 0
+    print("All conversion methods failed.", file=sys.stderr)
+    return 1
 ```
 
 **Step 2: Commit**

@@ -37,7 +37,7 @@ After installing, try these prompts with your agent:
 - "This epub has vertical text, can you make it horizontal?"
 - "Check if `book.epub` needs conversion to horizontal reading flow"
 
-The agent will run the conversion script automatically, detecting whether the epub needs conversion and choosing the best method (Calibre if available, direct manipulation otherwise).
+The agent will run the conversion script automatically, detecting whether the epub needs conversion and choosing the best method (direct manipulation first, Calibre as fallback if direct manipulation fails).
 
 ### CLI usage
 

@@ -5,7 +5,7 @@ license: MIT
 compatibility: Requires Python 3.8+. Optionally uses Calibre with TradSimpChinese plugin for best results.
 metadata:
   author: William Yeh <william.pjyeh@gmail.com>
-  version: "1.2"
+  version: "1.3"
 ---
 
 # epub-chinese-cleaner

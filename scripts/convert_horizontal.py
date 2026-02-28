@@ -140,13 +140,22 @@ def find_calibre_debug():
     return None
 
 
+_CALIBRE_PLUGIN_SCRIPT = (
+    "from calibre_plugins.chinese_text.main import main; "
+    "import sys; sys.exit(main(sys.argv[1:], ('cli','0.0')))"
+)
+
+
 def convert_via_calibre(epub_path, output_path, calibre_debug):
     """Convert epub using Calibre's TradSimpChinese plugin CLI."""
     with tempfile.TemporaryDirectory() as tmpdir:
+        script_path = os.path.join(tmpdir, "_plugin_runner.py")
+        with open(script_path, "w") as f:
+            f.write(_CALIBRE_PLUGIN_SCRIPT)
+
         result = subprocess.run(
             [
-                calibre_debug, "-e",
-                "from calibre_plugins.chinese_text.main import main; import sys; sys.exit(main(sys.argv[1:], ('cli','0.0')))",
+                calibre_debug, "-e", script_path,
                 "--",
                 "-td", "h",
                 "-up",

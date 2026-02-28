@@ -5,7 +5,7 @@ license: MIT
 compatibility: Requires Python 3.8+. Optionally uses Calibre with TradSimpChinese plugin for best results.
 metadata:
   author: William Yeh <william.pjyeh@gmail.com>
-  version: "1.3"
+  version: "1.4"
 ---
 
 # epub-chinese-cleaner
@@ -22,28 +22,17 @@ Converts Chinese epub files from vertical (直排) + RTL page flow to horizontal
 
 ## Usage
 
-Run the conversion script:
+Ask the agent to convert an epub by name or description:
 
-    python3 scripts/convert_horizontal.py <input.epub> [-o output.epub]
+- "Convert `三體.epub` to horizontal layout"
+- "This epub has vertical text, can you make it horizontal?"
+- "Check if `book.epub` needs conversion"
 
-If no `-o` is specified, output is `<input>_horizontal.epub`.
+The agent runs:
 
-The script automatically:
-- Tries Calibre CLI (TradSimpChinese plugin) if available at standard paths
-- Falls back to direct epub manipulation if Calibre is not installed
-- Skips conversion if the epub is already horizontal
+    python3 scripts/convert_horizontal.py <input.epub>
 
-## Example
-
-    python3 scripts/convert_horizontal.py 三體.epub
-
-Output: `三體_horizontal.epub`
-
-## Self-test
-
-    python3 scripts/convert_horizontal.py --self-test
-
-Creates a test epub with vertical layout, converts it, and verifies the output.
+Output is `<input>_horizontal.epub`. The script auto-detects whether conversion is needed and picks the best method (Calibre if available, direct manipulation otherwise).
 
 ## Punctuation mapping
 

@@ -142,7 +142,8 @@ def find_calibre_debug():
 
 _CALIBRE_PLUGIN_SCRIPT = (
     "from calibre_plugins.chinese_text.main import main; "
-    "import sys; sys.exit(main(sys.argv[1:], ('cli','0.0')))"
+    "from calibre_plugins.chinese_text import PLUGIN_VERSION_TUPLE; "
+    "import sys; sys.exit(main(sys.argv[1:], PLUGIN_VERSION_TUPLE))"
 )
 
 

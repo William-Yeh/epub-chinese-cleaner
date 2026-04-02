@@ -1,11 +1,11 @@
 ---
 name: epub-chinese-cleaner
-description: Use when a user has a Chinese epub with vertical text direction or right-to-left page progression and wants to convert it to standard horizontal reading. Converts from vertical layout (直排) to horizontal layout (橫排) with punctuation normalization and left-to-right page flow.
+description: Use when a user wants to convert a Chinese epub from vertical layout (直排) or RTL page flow to standard horizontal reading.
 license: MIT
 compatibility: Requires Python 3.8+. Optionally uses Calibre with TradSimpChinese plugin for best results.
 metadata:
   author: William Yeh <william.pjyeh@gmail.com>
-  version: "1.5"
+  version: "1.6"
 ---
 
 # epub-chinese-cleaner

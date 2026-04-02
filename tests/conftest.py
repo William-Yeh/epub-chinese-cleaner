@@ -6,8 +6,8 @@ import tempfile
 
 import pytest
 
-# Make scripts/ importable
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
+# Make skill/scripts/ importable
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "skill", "scripts"))
 
 from convert_horizontal import _make_test_epub
 

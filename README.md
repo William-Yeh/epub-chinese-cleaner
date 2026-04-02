@@ -33,9 +33,9 @@ Optionally install [Calibre](https://calibre-ebook.com/) with the [TradSimpChine
 
 After installing, try these prompts with your agent:
 
-- "Convert `三體.epub` to horizontal layout"
-- "This epub has vertical text, can you make it horizontal?"
-- "Check if `book.epub` needs conversion to horizontal reading flow"
+- `Convert 三體.epub to horizontal layout`
+- `This epub has vertical text, can you make it horizontal?`
+- `Check if book.epub needs conversion to horizontal reading flow`
 
 The agent will run the conversion script automatically, detecting whether the epub needs conversion and choosing the best method (direct manipulation first, Calibre as fallback if direct manipulation fails).
 
@@ -44,18 +44,18 @@ The agent will run the conversion script automatically, detecting whether the ep
 You can also run the script directly:
 
 ```bash
-python3 scripts/convert_horizontal.py <input.epub> [-o output.epub]
+python3 skill/scripts/convert_horizontal.py <input.epub> [-o output.epub]
 ```
 
 If no `-o` is specified, output is `<input>_horizontal.epub`.
 
 ```bash
 # Example
-python3 scripts/convert_horizontal.py 三體.epub
+python3 skill/scripts/convert_horizontal.py 三體.epub
 # Output: 三體_horizontal.epub
 
 # Self-test
-python3 scripts/convert_horizontal.py --self-test
+python3 skill/scripts/convert_horizontal.py --self-test
 ```
 
 ## Testing
@@ -69,7 +69,7 @@ uv run --with pytest pytest tests/ -v
 Or use the built-in self-test (no dependencies):
 
 ```bash
-python3 scripts/convert_horizontal.py --self-test
+python3 skill/scripts/convert_horizontal.py --self-test
 ```
 
 ### Test strategy
